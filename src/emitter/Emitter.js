@@ -10,6 +10,7 @@ import EventDispatcher, {
   PARTICLE_CREATED,
   PARTICLE_DEAD,
   PARTICLE_UPDATE,
+  GPU_RENDERER_SHOULD_SORT_PARTICLES,
 } from '../events';
 import { INTEGRATION_TYPE_EULER, integrate } from '../math';
 import { Util, uid } from '../utils';
@@ -630,6 +631,13 @@ export default class Emitter extends Particle {
 
       this.parent && this.parent.dispatch(PARTICLE_UPDATE, particle);
       this.bindEmitterEvent && this.dispatch(PARTICLE_UPDATE, particle);
+
+      // @experimental - GPURenderer depth sorting event
+      this.parent &&
+        this.parent.dispatch(
+          GPU_RENDERER_SHOULD_SORT_PARTICLES,
+          this.particles
+        );
     }
   }
 

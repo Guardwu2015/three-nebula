@@ -1,6 +1,6 @@
 import { Target, UniqueList } from './stores';
 import { fragmentShader, vertexShader } from './shaders';
-
+import { GPU_RENDERER_SHOULD_SORT_PARTICLES } from '../../events';
 import BaseRenderer from '../BaseRenderer';
 import { DEFAULT_RENDERER_OPTIONS } from './constants';
 import ParticleBuffer from './ParticleBuffer';
@@ -25,7 +25,15 @@ export default class GPURenderer extends BaseRenderer {
 
     THREE = three;
     const props = { ...DEFAULT_RENDERER_OPTIONS, ...options };
-    const { maxParticles, baseColor, blending, depthTest, transparent } = props;
+    const {
+      camera,
+      maxParticles,
+      baseColor,
+      blending,
+      depthTest,
+      depthWrite,
+      transparent,
+    } = props;
     const particleBuffer = new ParticleBuffer(maxParticles, THREE);
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -36,11 +44,14 @@ export default class GPURenderer extends BaseRenderer {
       fragmentShader: fragmentShader(),
       blending: THREE[blending],
       depthTest,
+      depthWrite,
       transparent,
     });
 
+    this.camera = camera;
     this.targetPool = new Pool();
     this.uniqueList = new UniqueList(maxParticles);
+    this.particleBuffer = particleBuffer;
     this.buffer = particleBuffer.buffer;
     this.stride = particleBuffer.stride;
     this.geometry = particleBuffer.geometry;
@@ -48,6 +59,19 @@ export default class GPURenderer extends BaseRenderer {
     this.points = new THREE.Points(this.geometry, this.material);
 
     container.add(this.points);
+  }
+
+  init(system) {
+    super.init(system);
+
+    const self = this;
+
+    this.system.eventDispatcher.addEventListener(
+      GPU_RENDERER_SHOULD_SORT_PARTICLES,
+      function(particles) {
+        self.onShouldSortParticles.call(self, particles);
+      }
+    );
   }
 
   /**
@@ -76,6 +100,23 @@ export default class GPURenderer extends BaseRenderer {
     }
 
     this.updateTarget(particle).mapParticleTargetPropsToPoint(particle);
+  }
+
+  onShouldSortParticles() {
+    // const { camera } = this;
+    // const cameraLook = new THREE.Vector3(0, 0, -1).applyQuaternion(
+    //   camera.quaternion
+    // );
+    // const cameraDot = camera.position.dot(cameraLook);
+    // const numParticles = particles.length;
+    //
+    // for (let i = 0; i < numParticles; i++) {
+    //   const particle = particles[i];
+    //
+    //   particle.distanceToCamera = particle.position.dot(cameraLook) - cameraDot;
+    // }
+    //
+    // particles.sort((a, b) => a.distanceToCamera - b.distanceToCamera);
   }
 
   /**
@@ -215,6 +256,8 @@ export default class GPURenderer extends BaseRenderer {
     Object.keys(this.geometry.attributes).map(attribute => {
       this.geometry.attributes[attribute].data.needsUpdate = true;
     });
+
+    // this.particleBuffer.sortDepth(this.camera.position);
 
     return this;
   }

@@ -8,7 +8,7 @@ window.init = async ({ scene, camera, renderer }) => {
     new THREE.MeshPhongMaterial({ wireframe: false, color: 'red' })
   );
   const spriteRenderer = new SpriteRenderer(scene, THREE);
-  const gpuRenderer = new GPURenderer(scene, THREE);
+  const gpuRenderer = new GPURenderer(scene, THREE, { camera });
   const systemRenderer = gpuRenderer;
   const system = await System.fromJSONAsync(particleSystemState, THREE, {
     shouldAutoEmit: true,

@@ -3,6 +3,7 @@ import {
   DEFAULT_MAX_PARTICLES,
   PARTICLE_BYTE_SIZE,
 } from './constants';
+import DepthSorter from './Sorter';
 
 let THREE;
 
@@ -18,6 +19,7 @@ export default class ParticleBuffer {
   constructor(maxParticles = DEFAULT_MAX_PARTICLES, three) {
     THREE = three;
     this.maxParticles = maxParticles;
+    this.sorter = new DepthSorter();
 
     this.createInterleavedBuffer().createBufferGeometry();
   }
@@ -63,6 +65,21 @@ export default class ParticleBuffer {
     }, 0);
 
     return this;
+  }
+
+  /**
+   * Sorts the depths of all vertex positions.
+   *
+   * @param {Vector3} cameraPosition - The current camera position
+   * @return void
+   */
+  sortDepth(cameraPosition) {
+    const { buffer, stride } = this;
+
+    this.sorter.sort(this.geometry.attributes, cameraPosition, {
+      buffer,
+      stride,
+    });
   }
 
   /**
